@@ -1,6 +1,6 @@
 # prune-sourcemaps
 
-Recursively deletes sourcemap files and sourcemap comments under <directory>
+Recursively deletes sourcemap files and sourcemap comments under a directory
 
 ## Usage
 
