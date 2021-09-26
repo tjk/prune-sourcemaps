@@ -1,0 +1,35 @@
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version
+        required: false
+        default: "patch"
+jobs:
+  default:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix: 
+        node-version: [14.17]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Cache .pnpm-store
+        uses: actions/cache@v1
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - run: curl -f https://get.pnpm.io/v6.14.js | node - add --global pnpm@6
+      - run: pnpm install
+      - run: pnpm build
+      - run: |
+          git config --global user.email "tj.koblentz@gmail.com"
+          git config --global user.name "TJ Koblentz (CI)"
+      - run: npx release-it ${{ github.event.inputs.version }} --npm.skipChecks --ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TJK_TOKEN }}

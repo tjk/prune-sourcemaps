@@ -1,0 +1,82 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const path = require('path')
+const { pruneSourcemaps } = require('../src')
+
+const args = process.argv.slice()
+args.shift() // node
+args.shift() // prune-sourcemaps
+
+function printHelp(err=false) {
+  const meth = err ? 'error' : 'log'
+  console[meth]('Usage: npx prune-sourcemaps <directory>')
+  console[meth]('Recursively deletes sourcemap files and sourcemap comments under <directory>')
+  process.exit(err ? 1 : 0)
+}
+
+function error(msg) {
+  console.error(`Error: ${msg}`)
+  process.exit(1)
+}
+
+let confirm = true
+let directory
+for (const arg of args) {
+  if (arg === '-h' || arg === '--help') {
+    printHelp()
+  } else if (arg === '-y' || arg === '--yes') {
+    confirm = false
+  } else if (!directory) {
+    directory = arg
+  } else {
+    console.error(`Unexpected argument: "${arg}"`)
+    printHelp(true)
+  }
+}
+
+if (!directory) {
+  printHelp(true)
+}
+
+// we do this twice so we don't ask for confirmation before these simple checks
+const dirPath = path.resolve(process.cwd(), directory)
+if (!fs.existsSync(dirPath)) {
+  error(`Directory not found -- ${dirPath}`)
+}
+const st = fs.statSync(dirPath)
+if (!st.isDirectory()) {
+  error(`Not a directory -- ${dirPath}`)
+}
+
+function doPrune() {
+  pruneSourcemaps(dirPath).then(pruned => {
+    console.log(`Successfully pruned ${pruned.size} sourcemaps`)
+    pruned.forEach(sourcemap => console.log(`  - ${sourcemap}`))
+  }).catch(err => {
+    console.error(err)
+    process.exit(1)
+  })
+}
+
+if (!confirm) {
+  doPrune()
+} else {
+  const { stdin } = process
+  if (!stdin.isTTY) {
+    error('TTY is not available, use -y option to disable confirmation')
+  }
+  process.stdout.write(`Prune sourcemaps under ${directory}? [y/N] `)
+  stdin.setRawMode(true)
+  stdin.setEncoding('utf8')
+  stdin.resume()
+  stdin.on('data', k => {
+    stdin.pause()
+    console.log()
+    if (k === 'y') {
+      return doPrune()
+    }
+    console.log('Did not confirm, aborting')
+    process.exit(0)
+  })
+}
