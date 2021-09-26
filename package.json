@@ -1,6 +1,6 @@
 {
   "name": "prune-sourcemaps",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Prune sourcemaps and sourcemap comments under a directory",
   "author": "TJ Koblentz",
   "license": "MIT",
