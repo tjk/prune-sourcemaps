@@ -27,6 +27,7 @@ jobs:
       - run: curl -f https://get.pnpm.io/v6.14.js | node - add --global pnpm@6
       - run: pnpm install
       - run: pnpm build
-      - run: npx release-it ${{ github.event.inputs.version }} --npm.skipChecks --ci
+      - run: npm config set //registry.npmjs.org/:_authToken $NODE_AUTH_TOKEN
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+      - run: npx release-it ${{ github.event.inputs.version }} --npm.skipChecks --ci
